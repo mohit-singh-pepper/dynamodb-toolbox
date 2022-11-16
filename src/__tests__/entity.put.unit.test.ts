@@ -1,11 +1,11 @@
-import { Table, Entity } from '../index'
+import { Entity, Table } from '../index'
 import { DocumentClient } from './bootstrap.test'
 
 const TestTable = new Table({
   name: 'test-table',
   partitionKey: 'pk',
   sortKey: 'sk',
-  DocumentClient
+  DocumentClient,
 })
 
 const TestEntity = new Entity({
@@ -36,15 +36,15 @@ const TestEntity = new Entity({
     test_binary: { type: 'binary' },
     simple_string: 'string',
     test_composite: ['sort', 0],
-    test_composite2: ['sort', 1, { save: false }]
+    test_composite2: ['sort', 1, { save: false }],
   },
-  table: TestTable
+  table: TestTable,
 })
 
 const TestTable2 = new Table({
   name: 'test-table',
   partitionKey: 'pk',
-  DocumentClient
+  DocumentClient,
 })
 
 const TestEntity2 = new Entity({
@@ -54,9 +54,9 @@ const TestEntity2 = new Entity({
     email: { type: 'string', partitionKey: true },
     sort: { type: 'string', map: 'sk' },
     test_composite: ['sort', 0],
-    test_composite2: ['sort', 1, { save: false }]
+    test_composite2: ['sort', 1, { save: false }],
   },
-  table: TestTable2
+  table: TestTable2,
 } as const)
 
 const TestEntity3 = new Entity({
@@ -65,16 +65,16 @@ const TestEntity3 = new Entity({
   attributes: {
     email: { type: 'string', partitionKey: true },
     test: { required: true },
-    test2: 'string'
+    test2: 'string',
   },
-  table: TestTable2
+  table: TestTable2,
 } as const)
 
 const TestTable3 = new Table({
   name: 'TestTable3',
   partitionKey: 'pk',
   sortKey: 'sk',
-  DocumentClient
+  DocumentClient,
 })
 
 const TestEntity4 = new Entity({
@@ -82,9 +82,9 @@ const TestEntity4 = new Entity({
   attributes: {
     id: { partitionKey: true },
     sk: { hidden: true, sortKey: true, default: (data: any) => data.id },
-    test: { alias: 'xyz' }
+    test: { alias: 'xyz' },
   },
-  table: TestTable3
+  table: TestTable3,
 } as const)
 
 const TestEntity5 = new Entity({
@@ -93,9 +93,19 @@ const TestEntity5 = new Entity({
   attributes: {
     pk: { partitionKey: true },
     test_required_boolean: { type: 'boolean', required: true },
-    test_required_number: { type: 'number', required: true }
+    test_required_number: { type: 'number', required: true },
   },
-  table: TestTable2
+  table: TestTable2,
+})
+
+const TestEntity6 = new Entity({
+  name: 'TestEntity6',
+  autoExecute: false,
+  attributes: {
+    pk: { partitionKey: true },
+    test_number: { type: 'number', transform: () => 'abc' },
+  },
+  table: TestTable2,
 })
 
 describe('put', () => {
@@ -115,7 +125,7 @@ describe('put', () => {
       email: 'test-pk',
       sort: 'test-sk',
       // @ts-expect-error 💥 TODO: Handle aliases
-      count: 0
+      count: 0,
     })
 
     expect(Item.pk).toBe('test-pk')
@@ -133,7 +143,7 @@ describe('put', () => {
       sk: 'test-sk',
       float: 1.234,
       // @ts-expect-error 💥 TODO: Support coerce keyword
-      test_float_coerce: '1.234'
+      test_float_coerce: '1.234',
     })
 
     expect(Item.pk).toBe('test-pk')
@@ -150,7 +160,7 @@ describe('put', () => {
     let { Item } = TestEntity.putParams({
       email: 'test-pk',
       sort: 'test-sk',
-      test_string: 'different value'
+      test_string: 'different value',
     })
     expect(Item.pk).toBe('test-pk')
     expect(Item.sk).toBe('test-sk')
@@ -163,7 +173,7 @@ describe('put', () => {
   it('creates item with saved composite field', () => {
     let { Item } = TestEntity2.putParams({
       email: 'test-pk',
-      test_composite: 'test'
+      test_composite: 'test',
     })
     expect(Item.pk).toBe('test-pk')
     expect(Item.test_composite).toBe('test')
@@ -172,7 +182,7 @@ describe('put', () => {
   it('creates item that ignores field with no value', () => {
     let { Item } = TestEntity2.putParams({
       email: 'test-pk',
-      test_composite: undefined
+      test_composite: undefined,
     })
 
     expect(Item.pk).toBe('test-pk')
@@ -184,7 +194,7 @@ describe('put', () => {
     let { Item } = TestEntity3.putParams({
       email: 'test-pk',
       test: 'hello',
-      test2: null
+      test2: null,
     })
     expect(Item.pk).toBe('test-pk')
     expect(Item.test).toBe('hello')
@@ -196,8 +206,8 @@ describe('put', () => {
     expect(() =>
       TestEntity3.putParams({
         email: 'test-pk',
-        test: null
-      })
+        test: null,
+      }),
     ).toThrow(`'test' is a required field`)
   })
 
@@ -206,7 +216,7 @@ describe('put', () => {
       email: 'test-pk',
       sort: 'override',
       test_composite: 'test',
-      test_composite2: 'test2'
+      test_composite2: 'test2',
     })
 
     expect(Item.pk).toBe('test-pk')
@@ -219,7 +229,7 @@ describe('put', () => {
     let { Item } = TestEntity2.putParams({
       email: 'test-pk',
       test_composite: 'test',
-      test_composite2: 'test2'
+      test_composite2: 'test2',
     })
     expect(Item.pk).toBe('test-pk')
     expect(Item.sk).toBe('test#test2')
@@ -238,8 +248,8 @@ describe('put', () => {
         email: 'test-pk',
         sort: 'test-sk',
         // @ts-expect-error
-        unknown: '?'
-      })
+        unknown: '?',
+      }),
     ).toThrow(`Field 'unknown' does not have a mapping or alias`)
   })
 
@@ -250,12 +260,12 @@ describe('put', () => {
           email: 'test-pk',
           sort: 'test-sk',
           // @ts-expect-error
-          unknown: '?'
+          unknown: '?',
         },
         {
-          strictSchemaCheck: true
-        }
-      )
+          strictSchemaCheck: true,
+        },
+      ),
     ).toThrow(`Field 'unknown' does not have a mapping or alias`)
   })
 
@@ -265,19 +275,19 @@ describe('put', () => {
         {
           email: 'test-pk',
           sort: 'test-sk',
-          unknown: '?'
+          unknown: '?',
         },
         {
-          strictSchemaCheck: false
-        }
-      )
+          strictSchemaCheck: false,
+        },
+      ),
     ).not.toThrow()
   })
 
   it('omits unmapped attributes when strictSchemaCheck is false.', () => {
     let { Item } = TestEntity.putParams(
       { email: 'x', sort: 'y', unknown: '?' },
-      { strictSchemaCheck: false }
+      { strictSchemaCheck: false },
     )
 
     expect(Item.unknown).toBeUndefined()
@@ -289,8 +299,8 @@ describe('put', () => {
         email: 'test-pk',
         sort: 'test-sk',
         // @ts-expect-error
-        test_string: 1
-      })
+        test_string: 1,
+      }),
     ).toThrow(`'test_string' must be of type string`)
   })
 
@@ -300,8 +310,8 @@ describe('put', () => {
         email: 'test-pk',
         sort: 'test-sk',
         // @ts-expect-error
-        test_boolean: 'x'
-      })
+        test_boolean: 'x',
+      }),
     ).toThrow(`'test_boolean' must be of type boolean`)
   })
 
@@ -311,8 +321,8 @@ describe('put', () => {
         email: 'test-pk',
         sort: 'test-sk',
         // @ts-expect-error
-        test_number: 'x'
-      })
+        test_number: 'x',
+      }),
     ).toThrow(`'test_number' must be of type number`)
   })
 
@@ -322,8 +332,8 @@ describe('put', () => {
         email: 'test-pk',
         sort: 'test-sk',
         // @ts-expect-error
-        test_number_coerce: 'x1'
-      })
+        test_number_coerce: 'x1',
+      }),
     ).toThrow(`Could not convert 'x1' to a number for 'test_number_coerce'`)
   })
 
@@ -333,8 +343,8 @@ describe('put', () => {
         email: 'test-pk',
         sort: 'test-sk',
         // @ts-expect-error
-        test_list: 'x'
-      })
+        test_list: 'x',
+      }),
     ).toThrow(`'test_list' must be a list (array)`)
   })
 
@@ -344,8 +354,8 @@ describe('put', () => {
         email: 'test-pk',
         sort: 'test-sk',
         // 💥 TODO: Improve object support
-        test_map: 'x'
-      })
+        test_map: 'x',
+      }),
     ).toThrow(`'test_map' must be a map (object)`)
   })
 
@@ -355,8 +365,8 @@ describe('put', () => {
         email: 'test-pk',
         sort: 'test-sk',
         // @ts-expect-error
-        test_string_set_type: [1, 2, 3]
-      })
+        test_string_set_type: [1, 2, 3],
+      }),
     ).toThrow(`'test_string_set_type' must be a valid set (array) containing only string types`)
   })
 
@@ -365,19 +375,19 @@ describe('put', () => {
       TestEntity.putParams({
         email: 'test-pk',
         sort: 'test-sk',
-        test_string_set: ['test', 1]
-      })
+        test_string_set: ['test', 1],
+      }),
     ).toThrow(`String Set contains Number value`)
   })
 
-  it("fails when set coerces array and doesn't match type", () => {
+  it('fails when set coerces array and doesn\'t match type', () => {
     expect(() =>
       TestEntity.putParams({
         email: 'test-pk',
         sort: 'test-sk',
         // @ts-expect-error
-        test_number_set_type_coerce: '1,2,3'
-      })
+        test_number_set_type_coerce: '1,2,3',
+      }),
     ).toThrow(`'test_number_set_type_coerce' must be a valid set (array) of type number`)
   })
 
@@ -386,19 +396,19 @@ describe('put', () => {
       email: 'test-pk',
       sort: 'test-sk',
       // @ts-expect-error
-      test_string_set_type_coerce: '1,2,3'
+      test_string_set_type_coerce: '1,2,3',
     })
     expect(Item['test_string_set_type_coerce'].values).toEqual(['1', '2', '3'])
   })
 
-  it("fails when set doesn't contain array with no coercion", () => {
+  it('fails when set doesn\'t contain array with no coercion', () => {
     expect(() =>
       TestEntity.putParams({
         email: 'test-pk',
         sort: 'test-sk',
         // @ts-expect-error
-        test_string_set: 'test'
-      })
+        test_string_set: 'test',
+      }),
     ).toThrow(`'test_string_set' must be a valid set (array)`)
   })
 
@@ -407,8 +417,8 @@ describe('put', () => {
       // @ts-expect-error
       TestEntity3.putParams({
         email: 'test-pk',
-        test2: 'test'
-      })
+        test2: 'test',
+      }),
     ).toThrow(`'test' is a required field`)
   })
 
@@ -416,7 +426,7 @@ describe('put', () => {
     let { Item } = TestEntity5.putParams({
       pk: 'test-pk',
       test_required_boolean: false,
-      test_required_number: 0
+      test_required_number: 0,
     })
 
     expect(Item.test_required_boolean).toBe(false)
@@ -445,15 +455,15 @@ describe('put', () => {
       TestEntity.putParams(
         { email: 'x', sort: 'y' },
         // @ts-expect-error
-        { extra: true }
-      )
+        { extra: true },
+      ),
     ).toThrow('Invalid put options: extra')
   })
 
   it('sets capacity options', () => {
     let { TableName, ReturnConsumedCapacity } = TestEntity.putParams(
       { email: 'x', sort: 'y' },
-      { capacity: 'none' }
+      { capacity: 'none' },
     )
     expect(TableName).toBe('test-table')
     expect(ReturnConsumedCapacity).toBe('NONE')
@@ -462,7 +472,7 @@ describe('put', () => {
   it('sets metrics options', () => {
     let { TableName, ReturnItemCollectionMetrics } = TestEntity.putParams(
       { email: 'x', sort: 'y' },
-      { metrics: 'size' }
+      { metrics: 'size' },
     )
     expect(TableName).toBe('test-table')
     expect(ReturnItemCollectionMetrics).toBe('SIZE')
@@ -471,7 +481,7 @@ describe('put', () => {
   it('sets returnValues options', () => {
     let { TableName, ReturnValues } = TestEntity.putParams(
       { email: 'x', sort: 'y' },
-      { returnValues: 'ALL_OLD' }
+      { returnValues: 'ALL_OLD' },
     )
     expect(TableName).toBe('test-table')
     expect(ReturnValues).toBe('ALL_OLD')
@@ -479,13 +489,13 @@ describe('put', () => {
 
   it('fails on invalid capacity option', () => {
     expect(() => TestEntity.putParams({ email: 'x', sort: 'y' }, { capacity: 'test' })).toThrow(
-      `'capacity' must be one of 'NONE','TOTAL', OR 'INDEXES'`
+      `'capacity' must be one of 'NONE','TOTAL', OR 'INDEXES'`,
     )
   })
 
   it('fails on invalid metrics option', () => {
     expect(() => TestEntity.putParams({ email: 'x', sort: 'y' }, { metrics: 'test' })).toThrow(
-      `'metrics' must be one of 'NONE' OR 'SIZE'`
+      `'metrics' must be one of 'NONE' OR 'SIZE'`,
     )
   })
 
@@ -494,10 +504,10 @@ describe('put', () => {
       TestEntity.putParams(
         { email: 'x', sort: 'y' },
         // @ts-expect-error
-        { returnValues: 'test' }
-      )
+        { returnValues: 'test' },
+      ),
     ).toThrow(
-      `'returnValues' must be one of 'NONE', 'ALL_OLD', 'UPDATED_OLD', 'ALL_NEW', or 'UPDATED_NEW'`
+      `'returnValues' must be one of 'NONE', 'ALL_OLD', 'UPDATED_OLD', 'ALL_NEW', or 'UPDATED_NEW'`,
     )
   })
 
@@ -514,7 +524,7 @@ describe('put', () => {
     let { TableName, ReturnConsumedCapacity } = TestEntity.putParams(
       { email: 'x', sort: 'y' },
       {},
-      { ReturnConsumedCapacity: 'NONE' }
+      { ReturnConsumedCapacity: 'NONE' },
     )
     expect(TableName).toBe('test-table')
     expect(ReturnConsumedCapacity).toBe('NONE')
@@ -525,7 +535,7 @@ describe('put', () => {
       { email: 'x', sort: 'y' },
       {},
       // @ts-expect-error
-      'string'
+      'string',
     )
     expect(TableName).toBe('test-table')
   })
@@ -534,9 +544,16 @@ describe('put', () => {
     let { Item } = TestEntity4.putParams({
       id: 3,
       // @ts-expect-error 💥 TODO: Handle aliases
-      xyz: '123'
+      xyz: '123',
     })
     expect(Item.sk).toBe('3')
     // expect(TableName).toBe('test-table')
+  })
+
+  it('fail on invalid transformations', () => {
+    expect(() => TestEntity6.putParams({
+      pk: 'test-pk',
+      test_number: 123,
+    })).toThrow("Could not convert 'abc' to a number for 'test_number'")
   })
 })
